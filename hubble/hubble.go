@@ -76,6 +76,7 @@ type Parameters struct {
 	PortForward      int
 	CreateCA         bool
 	UI               bool
+	CLI              bool
 	UIPortForward    int
 	Writer           io.Writer
 }
@@ -245,6 +246,12 @@ func (k *K8sHubble) Enable(ctx context.Context) error {
 
 	if k.params.UI {
 		if err := k.enableUI(ctx); err != nil {
+			return err
+		}
+	}
+
+	if k.params.CLI {
+		if err := k.enableHubbleCLI(ctx); err != nil {
 			return err
 		}
 	}

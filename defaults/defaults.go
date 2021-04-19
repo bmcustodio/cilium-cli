@@ -63,6 +63,8 @@ const (
 	HubbleUIConfigMapName      = "hubble-ui-envoy"
 	HubbleUIDeploymentName     = "hubble-ui"
 
+	HubbleCLIDeploymentName = "hubble-cli"
+
 	ClusterMeshDeploymentName                 = "clustermesh-apiserver"
 	ClusterMeshServiceAccountName             = "clustermesh-apiserver"
 	ClusterMeshClusterRoleName                = "clustermesh-apiserver"
@@ -114,5 +116,9 @@ var (
 
 	HubbleUIDeploymentLabels = map[string]string{
 		"k8s-app": "hubble-ui",
+	}
+
+	HubbleCLIDeploymentLabels = map[string]string{
+		"k8s-app": "hubble-cli",
 	}
 )
