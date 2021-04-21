@@ -1,3 +1,4 @@
+// +build !linux
 // Copyright 2020-2021 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,29 +17,35 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 
 	"github.com/cilium/cilium-cli/connectivity/check"
 )
 
-type PodToPod struct {
-	check.PolicyContext
-	Variant string
+type podToPod struct {
+	name string
 }
 
-func (t *PodToPod) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func (t *podToPod) Name() string {
+	tn := "pod-to-pod"
+	if t.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, t.name)
 }
 
-func (t *PodToPod) Name() string {
-	return "pod-to-pod" + t.Variant
+func PodToPod(name string) check.Scenario {
+	return &podToPod{
+		name: name,
+	}
 }
 
-func (t *PodToPod) Run(ctx context.Context, c check.TestContext) {
+func (t *podToPod) Run(ctx context.Context, c check.TestContext) {
 	for _, client := range c.ClientPods() {
 		for _, echo := range c.EchoPods() {
-			run := check.NewTestRun(t, c, client, echo, 8080)
+			run := check.NewAction(t, c, client, echo, 8080)
 			cmd := curlCommand(net.JoinHostPort(echo.Pod.Status.PodIP, strconv.Itoa(8080)))
 			stdout, stderr, err := client.K8sClient.ExecInPodWithStderr(ctx, client.Pod.Namespace, client.Pod.Name, client.Pod.Labels["name"], cmd)
 			run.LogResult(cmd, err, stdout, stderr)

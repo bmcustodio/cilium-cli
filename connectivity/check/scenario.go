@@ -12,8 +12,15 @@
 // See the License for the specific language governing permissions and
 // limitations under the License.
 
-package tests
+package check
 
-func curl(target string) []string {
-	return []string{"curl", "-w", "%{local_ip}:%{local_port} -> %{remote_ip}:%{remote_port} = %{response_code}\n", "--show-error", "--silent", "--fail", "--show-error", "--connect-timeout", "5", "--output", "/dev/null", target}
+import "context"
+
+// Scenario is implemented by all test scenarios like pod-to-pod, pod-to-world, etc.
+type Scenario interface {
+	// Name returns the name of the Scenario.
+	Name() string
+
+	// Run is invoked by the testing framework to execute the Scenario.
+	Run(ctx context.Context, t *Test)
 }

@@ -1,3 +1,4 @@
+// +build !linux
 // Copyright 2020-2021 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,31 +17,37 @@ package tests
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cilium/cilium-cli/connectivity/check"
 )
 
-type ClientToClient struct {
-	check.PolicyContext
-	Variant string
+type clientToClient struct {
+	name string
 }
 
-func (t *ClientToClient) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func ClientToClient(name string) check.Scenario {
+	return &clientToClient{
+		name: name,
+	}
 }
 
-func (t *ClientToClient) Name() string {
-	return "client-to-client" + t.Variant
+func (s *clientToClient) Name() string {
+	tn := "client-to-client"
+	if s.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, s.name)
 }
 
-func (t *ClientToClient) Run(ctx context.Context, c check.TestContext) {
+func (s *clientToClient) Run(ctx context.Context, c check.TestContext) {
 	for _, src := range c.ClientPods() {
 		for _, dst := range c.ClientPods() {
 			if src.Pod.Status.PodIP == dst.Pod.Status.PodIP {
 				// Currently we only get flows once per IP
 				continue
 			}
-			run := check.NewTestRun(t, c, src, dst, 0) // 0 port number for ICMP
+			run := check.NewAction(s, c, src, dst, 0) // 0 port number for ICMP
 			cmd := []string{"ping", "-w", "3", "-c", "1", dst.Pod.Status.PodIP}
 			stdout, stderr, err := src.K8sClient.ExecInPodWithStderr(ctx, src.Pod.Namespace, src.Pod.Name, "", cmd)
 			run.LogResult(cmd, err, stdout, stderr)

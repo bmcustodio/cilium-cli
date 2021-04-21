@@ -1,3 +1,4 @@
+// +build !linux
 // Copyright 2020-2021 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,24 +17,30 @@ package tests
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cilium/cilium-cli/connectivity/check"
 )
 
-type PodToHost struct {
-	check.PolicyContext
-	Variant string
+type podToHost struct {
+	name string
 }
 
-func (t *PodToHost) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func PodToHost(name string) check.Scenario {
+	return &podToHost{
+		name: name,
+	}
 }
 
-func (t *PodToHost) Name() string {
-	return "pod-to-host" + t.Variant
+func (t *podToHost) Name() string {
+	tn := "pod-to-host"
+	if t.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, t.name)
 }
 
-func (t *PodToHost) Run(ctx context.Context, c check.TestContext) {
+func (t *podToHost) Run(ctx context.Context, c check.TestContext) {
 	// Construct a map of all unique host IPs where pods are running on.
 	// This will include:
 	// - The local host
@@ -50,7 +57,7 @@ func (t *PodToHost) Run(ctx context.Context, c check.TestContext) {
 	for _, client := range c.ClientPods() {
 		for hostIP := range hostIPs {
 			cmd := []string{"ping", "-w", "3", "-c", "1", hostIP}
-			run := check.NewTestRun(t, c, client, check.NetworkEndpointContext{Peer: hostIP}, 0) // 0 port number for ICMP
+			run := check.NewAction(t, c, client, check.NetworkEndpointContext{Peer: hostIP}, 0) // 0 port number for ICMP
 			stdout, stderr, err := client.K8sClient.ExecInPodWithStderr(ctx, client.Pod.Namespace, client.Pod.Name, client.Pod.Labels["name"], cmd)
 			run.LogResult(cmd, err, stdout, stderr)
 			egressFlowRequirements := run.GetEgressRequirements(check.FlowParameters{

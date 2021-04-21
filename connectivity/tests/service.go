@@ -1,3 +1,4 @@
+// +build !linux
 // Copyright 2020 Authors of Cilium
 //
 // Licensed under the Apache License, Version 2.0 (the "License");
@@ -16,26 +17,32 @@ package tests
 
 import (
 	"context"
+	"fmt"
 	"net"
 	"strconv"
 
 	"github.com/cilium/cilium-cli/connectivity/check"
 )
 
-type PodToService struct {
-	check.PolicyContext
-	Variant string
+type podToService struct {
+	name string
 }
 
-func (t *PodToService) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func PodToService(name string) check.Scenario {
+	return &podToService{
+		name: name,
+	}
 }
 
-func (t *PodToService) Name() string {
-	return "pod-to-service" + t.Variant
+func (t *podToService) Name() string {
+	tn := "pod-to-service"
+	if t.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, t.name)
 }
 
-func (t *PodToService) Run(ctx context.Context, c check.TestContext) {
+func (t *podToService) Run(ctx context.Context, c check.TestContext) {
 	for _, client := range c.ClientPods() {
 		serviceDestinations := serviceDefinitionMap{}
 		for _, echoSvc := range c.EchoServices() {
@@ -51,20 +58,25 @@ func (t *PodToService) Run(ctx context.Context, c check.TestContext) {
 
 }
 
-type PodToNodePort struct {
-	check.PolicyContext
-	Variant string
+type podToNodePort struct {
+	name string
 }
 
-func (t *PodToNodePort) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func PodToNodePort(name string) check.Scenario {
+	return &podToNodePort{
+		name: name,
+	}
 }
 
-func (t *PodToNodePort) Name() string {
-	return "pod-to-nodeport" + t.Variant
+func (t *podToNodePort) Name() string {
+	tn := "pod-to-nodeport"
+	if t.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, t.name)
 }
 
-func (t *PodToNodePort) Run(ctx context.Context, c check.TestContext) {
+func (t *podToNodePort) Run(ctx context.Context, c check.TestContext) {
 	for _, client := range c.ClientPods() {
 		serviceDestinations := serviceDefinitionMap{}
 		for _, echoSvc := range c.EchoServices() {
@@ -82,20 +94,25 @@ func (t *PodToNodePort) Run(ctx context.Context, c check.TestContext) {
 	}
 }
 
-type PodToLocalNodePort struct {
-	check.PolicyContext
-	Variant string
+type podToLocalNodePort struct {
+	name string
 }
 
-func (t *PodToLocalNodePort) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func PodToLocalNodePort(name string) check.Scenario {
+	return &podToLocalNodePort{
+		name: name,
+	}
 }
 
-func (t *PodToLocalNodePort) Name() string {
-	return "pod-to-local-nodeport" + t.Variant
+func (t *podToLocalNodePort) Name() string {
+	tn := "pod-to-local-nodeport"
+	if t.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, t.name)
 }
 
-func (t *PodToLocalNodePort) Run(ctx context.Context, c check.TestContext) {
+func (t *podToLocalNodePort) Run(ctx context.Context, c check.TestContext) {
 	for _, client := range c.ClientPods() {
 		serviceDestinations := serviceDefinitionMap{}
 		for _, client := range c.ClientPods() {
@@ -123,10 +140,10 @@ type serviceDefinition struct {
 
 type serviceDefinitionMap map[string]serviceDefinition
 
-func testConnetivityToServiceDefinition(ctx context.Context, c check.TestContext, t check.ConnectivityTest, client check.PodContext, def serviceDefinitionMap) {
+func testConnetivityToServiceDefinition(ctx context.Context, c check.TestContext, t check.Scenario, client check.PodContext, def serviceDefinitionMap) {
 	for peer, definition := range def {
 		destination := net.JoinHostPort(peer, strconv.Itoa(definition.port))
-		run := check.NewTestRun(t, c, client, check.NetworkEndpointContext{
+		run := check.NewAction(t, c, client, check.NetworkEndpointContext{
 			CustomName: destination + " (" + definition.name + ")",
 			Peer:       destination,
 		}, 8080)

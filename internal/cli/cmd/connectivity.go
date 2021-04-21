@@ -32,7 +32,7 @@ func newCmdConnectivity() *cobra.Command {
 		Long:  ``,
 	}
 
-	cmd.AddCommand(newCmdConnectivityCheck())
+	cmd.AddCommand(newCmdConnectivityTest())
 
 	return cmd
 }
@@ -41,13 +41,13 @@ var params = check.Parameters{
 	Writer: os.Stdout,
 }
 
-func newCmdConnectivityCheck() *cobra.Command {
+func newCmdConnectivityTest() *cobra.Command {
 	cmd := &cobra.Command{
 		Use:   "test",
 		Short: "Validate connectivity in cluster",
 		Long:  ``,
 		RunE: func(cmd *cobra.Command, args []string) error {
-			cc, err := check.NewK8sConnectivityCheck(k8sClient, params)
+			cc, err := check.NewConnectivityTest(k8sClient, params)
 			if err != nil {
 				return err
 			}

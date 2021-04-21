@@ -16,66 +16,78 @@ package tests
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/cilium/cilium-cli/connectivity/check"
 )
 
-type PodToWorld struct {
-	check.PolicyContext
-	Variant string
+// podToWorld implements a Scenario.
+type podToWorld struct {
+	name string
 }
 
-func (t *PodToWorld) WithPolicy(yaml string) check.ConnectivityTest {
-	return t.WithPolicyRunner(t, yaml)
+func PodToWorld(name string) check.Scenario {
+	return &podToWorld{
+		name: name,
+	}
 }
 
-func (t *PodToWorld) Name() string {
-	return "pod-to-world" + t.Variant
+func (s *podToWorld) Name() string {
+	tn := "pod-to-world"
+	if s.name == "" {
+		return tn
+	}
+	return fmt.Sprintf("%s-%s", tn, s.name)
 }
 
-func (t *PodToWorld) Run(ctx context.Context, c check.TestContext) {
-	fqdn := "google.com"
+func (s *podToWorld) Run(ctx context.Context, t *check.Test) {
+	ghttp := check.NetworkEndpoint("google-http", "google.com", 80)
+	ghttps := check.NetworkEndpoint("google-https", "google.com", 443)
+	wwwghttp := check.NetworkEndpoint("www-google-http", "www.google.com", 80)
 
 	// With https
-	if client := c.RandomClientPod(); client != nil {
-		run := check.NewTestRun(t, c, client, check.NetworkEndpointContext{Peer: fqdn}, 443)
-		cmd := curlCommand("https://" + fqdn)
-		stdout, stderr, err := client.K8sClient.ExecInPodWithStderr(ctx, client.Pod.Namespace, client.Pod.Name, client.Pod.Labels["name"], cmd)
-		run.LogResult(cmd, err, stdout, stderr)
-		egressFlowRequirements := run.GetEgressRequirements(check.FlowParameters{
+	if client := t.Context().RandomClientPod(); client != nil {
+		cmd := curl("https://" + ghttps.Address())
+
+		a := t.NewAction(s, "https-to-google", client, ghttps)
+
+		// TODO(timo): This is silly
+		_, _, _ = a.ExecInPod(ctx, cmd)
+
+		egressFlowRequirements := a.GetEgressRequirements(check.FlowParameters{
 			DNSRequired: true,
 			RSTAllowed:  true,
 		})
-		run.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
-		run.End()
+		a.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
 	}
 
 	// With http
-	if client := c.RandomClientPod(); client != nil {
-		run := check.NewTestRun(t, c, client, check.NetworkEndpointContext{Peer: fqdn}, 80)
-		cmd := curlCommand("http://" + fqdn)
-		stdout, stderr, err := client.K8sClient.ExecInPodWithStderr(ctx, client.Pod.Namespace, client.Pod.Name, client.Pod.Labels["name"], cmd)
-		run.LogResult(cmd, err, stdout, stderr)
-		egressFlowRequirements := run.GetEgressRequirements(check.FlowParameters{
+	if client := t.Context().RandomClientPod(); client != nil {
+		cmd := curl("http://" + ghttp.Address())
+
+		a := t.NewAction(s, "http-to-google", client, ghttp)
+
+		_, _, _ = a.ExecInPod(ctx, cmd)
+
+		egressFlowRequirements := a.GetEgressRequirements(check.FlowParameters{
 			DNSRequired: true,
 			RSTAllowed:  true,
 		})
-		run.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
-		run.End()
+		a.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
 	}
 
 	// With http to www.google.com
-	fqdn2 := "www.google.com"
-	if client := c.RandomClientPod(); client != nil {
-		run := check.NewTestRun(t, c, client, check.NetworkEndpointContext{Peer: fqdn2}, 80)
-		cmd := curlCommand("http://" + fqdn2)
-		stdout, stderr, err := client.K8sClient.ExecInPodWithStderr(ctx, client.Pod.Namespace, client.Pod.Name, client.Pod.Labels["name"], cmd)
-		run.LogResult(cmd, err, stdout, stderr)
-		egressFlowRequirements := run.GetEgressRequirements(check.FlowParameters{
+	if client := t.Context().RandomClientPod(); client != nil {
+		cmd := curl("http://" + wwwghttp.Address())
+
+		a := t.NewAction(s, "http-to-www-google", client, wwwghttp)
+
+		_, _, _ = a.ExecInPod(ctx, cmd)
+
+		egressFlowRequirements := a.GetEgressRequirements(check.FlowParameters{
 			DNSRequired: true,
 			RSTAllowed:  true,
 		})
-		run.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
-		run.End()
+		a.ValidateFlows(ctx, client.Name(), client.Pod.Status.PodIP, egressFlowRequirements)
 	}
 }
