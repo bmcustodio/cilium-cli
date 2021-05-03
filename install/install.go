@@ -1086,7 +1086,7 @@ func (k *K8sInstaller) daemonRunPathOnHost() string {
 }
 
 func (k *K8sInstaller) fqAgentImage() string {
-	return utils.BuildImagePath(k.params.AgentImage, defaults.AgentImage, k.params.Version, defaults.Version)
+	return utils.BuildImagePath(k.params.AgentImage, defaults.AgentImage, k.params.Version)
 }
 
 func (k *K8sInstaller) fqOperatorImage() string {
@@ -1098,7 +1098,7 @@ func (k *K8sInstaller) fqOperatorImage() string {
 		defaultImage = defaults.OperatorImageAzure
 	}
 
-	return utils.BuildImagePath(k.params.OperatorImage, defaultImage, k.params.Version, defaults.Version)
+	return utils.BuildImagePath(k.params.OperatorImage, defaultImage, k.params.Version)
 }
 
 func (k *K8sInstaller) operatorCommand() []string {
