@@ -1086,19 +1086,23 @@ func (k *K8sInstaller) daemonRunPathOnHost() string {
 }
 
 func (k *K8sInstaller) fqAgentImage() string {
-	return utils.BuildImagePath(k.params.AgentImage, defaults.AgentImage, k.params.Version)
+	return utils.BuildImagePath(k.params.AgentImage, k.params.Version)
 }
 
 func (k *K8sInstaller) fqOperatorImage() string {
-	defaultImage := defaults.OperatorImage
-	switch k.params.DatapathMode {
-	case DatapathAwsENI:
-		defaultImage = defaults.OperatorImageAWS
-	case DatapathAzure:
-		defaultImage = defaults.OperatorImageAzure
+	operatorImage := k.params.OperatorImage
+	if operatorImage == "" {
+		switch k.params.DatapathMode {
+		case DatapathAwsENI:
+			operatorImage = defaults.OperatorImageAWS
+		case DatapathAzure:
+			operatorImage = defaults.OperatorImageAzure
+		default:
+			operatorImage = defaults.OperatorImage
+		}
 	}
 
-	return utils.BuildImagePath(k.params.OperatorImage, defaultImage, k.params.Version)
+	return utils.BuildImagePath(operatorImage, k.params.Version)
 }
 
 func (k *K8sInstaller) operatorCommand() []string {

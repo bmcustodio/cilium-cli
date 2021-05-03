@@ -72,8 +72,8 @@ cilium install --context kind-cluster1 --cluster-id 1 --cluster-name cluster1
 	cmd.Flags().StringVar(&params.Encryption, "encryption", "disabled", "Enable encryption of all workloads traffic { disabled | ipsec | wireguard }")
 	cmd.Flags().BoolVar(&params.NodeEncryption, "node-encryption", false, "Enable encryption of all node to node traffic")
 	cmd.Flags().StringSliceVar(&params.ConfigOverwrites, "config", []string{}, "Set ConfigMap entries (key=value)")
-	cmd.Flags().StringVar(&params.AgentImage, "agent-image", "", "Image path to use for Cilium agent")
-	cmd.Flags().StringVar(&params.OperatorImage, "operator-image", "", "Image path to use for Cilium operator")
+	cmd.Flags().StringVar(&params.AgentImage, "agent-image", defaults.AgentImage, "Image path to use for Cilium agent")
+	cmd.Flags().StringVar(&params.OperatorImage, "operator-image", defaults.OperatorImage, "Image path to use for Cilium operator")
 
 	cmd.Flags().StringVar(&params.Azure.ResourceGroupName, "azure-resource-group", "", "Azure resource group name the cluster is in")
 	cmd.Flags().StringVar(&params.Azure.TenantID, "azure-tenant-id", "", "Azure tenant ID")
@@ -146,8 +146,8 @@ cilium upgrade --version 1.9.5
 	cmd.Flags().StringVar(&contextName, "context", "", "Kubernetes configuration context")
 	cmd.Flags().BoolVar(&params.Wait, "wait", true, "Wait for status to report success (no errors)")
 	cmd.Flags().DurationVar(&params.WaitDuration, "wait-duration", 15*time.Minute, "Maximum time to wait for status")
-	cmd.Flags().StringVar(&params.AgentImage, "agent-image", "", "Image path to use for Cilium agent")
-	cmd.Flags().StringVar(&params.OperatorImage, "operator-image", "", "Image path to use for Cilium operator")
+	cmd.Flags().StringVar(&params.AgentImage, "agent-image", defaults.AgentImage, "Image path to use for Cilium agent")
+	cmd.Flags().StringVar(&params.OperatorImage, "operator-image", defaults.OperatorImage, "Image path to use for Cilium operator")
 
 	return cmd
 }

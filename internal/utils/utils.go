@@ -22,12 +22,8 @@ import (
 	"github.com/cilium/cilium-cli/defaults"
 )
 
-func BuildImagePath(userImage, defaultImage, version string) string {
-	if userImage == "" {
-		userImage = defaultImage
-	}
-
-	return userImage + ":" + version
+func BuildImagePath(image, version string) string {
+	return image + ":" + version
 }
 
 type LogFunc func(err error, waitTime string)
